@@ -2,6 +2,9 @@ import React, { Fragment } from 'react';
 import { render } from 'react-dom';
 
 // https://developer.mozilla.org/en-US/docs/Web/API/ImageCapture
+// https://developer.mozilla.org/en-US/docs/Web/API/ImageBitmap
+// https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage
+
 function drawCanvas(canvas, img) {
     canvas.width = getComputedStyle(canvas).width.split('px')[0];
     canvas.height = getComputedStyle(canvas).height.split('px')[0];
@@ -26,19 +29,31 @@ async function run() {
     const track = await stream.getVideoTracks()[0];
 
 
-    while (true) {
-        const capture = new ImageCapture(track);
-        const blob = await capture.takePhoto();
-        const imageBitmap = await createImageBitmap(blob);
-        const bitmap = await capture.grabFrame();
-        const ctx = canvas.getContext('2d');
 
-        drawCanvas(canvas, imageBitmap);
-        console.log('height: ', bitmap.height, ' width: ', bitmap.width);
+    const capture = new ImageCapture(track);
+    const blob = await capture.takePhoto();
+    const url = window.URL.createObjectURL(blob);
 
-        //ctx.drawImage(imageBitmap, 0, 0, imageBitmap.width, imageBitmap.height)
-        //ctx.drawImage(bitmap, 0, 0)
-    }
+    const a = document.createElement("a");
+    document.body.appendChild(a);
+    a.style = "display: none";
+    a.href = url;
+    a.download = 'imagetest.png';
+    a.click();
+
+    /* while (true) {
+     *     const capture = new ImageCapture(track);
+     *     const blob = await capture.takePhoto();
+     *     const imageBitmap = await createImageBitmap(blob);
+     *     const bitmap = await capture.grabFrame();
+     *     const ctx = canvas.getContext('2d');
+
+     *     drawCanvas(canvas, imageBitmap);
+     *     console.log('height: ', bitmap.height, ' width: ', bitmap.width);
+
+     *     //ctx.drawImage(imageBitmap, 0, 0, imageBitmap.width, imageBitmap.height)
+     *     //ctx.drawImage(bitmap, 0, 0)
+     * } */
 }
 
 run().then(() => {
