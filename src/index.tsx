@@ -5,58 +5,58 @@ import { render } from 'react-dom';
 // https://developer.mozilla.org/en-US/docs/Web/API/ImageBitmap
 // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage
 
-function drawCanvas(canvas, img) {
-    canvas.width = getComputedStyle(canvas).width.split('px')[0];
-    canvas.height = getComputedStyle(canvas).height.split('px')[0];
-    let ratio = Math.min(canvas.width / img.width, canvas.height / img.height);
-    let x = (canvas.width - img.width * ratio) / 2;
-    let y = (canvas.height - img.height * ratio) / 2;
-    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-    canvas.getContext('2d').drawImage(img, 0, 0, img.width, img.height,
-        x, y, img.width * ratio, img.height * ratio);
-}
-
-async function run() {
-    const canvas = document.getElementById("video-canvas") as HTMLCanvasElement;
-
-    const video = document.getElementById("player")
-
-    const mediaOptions = {
-        video: true
+function loop(f: () => void, timeout: number = 5000) {
+    function g() {
+        setTimeout(() => {
+            f();
+            g();
+        }, timeout)
     }
-    const stream = await navigator.mediaDevices.getUserMedia(mediaOptions);
-    console.log('stream: ', stream);
-    const track = await stream.getVideoTracks()[0];
-
-
-
-    const capture = new ImageCapture(track);
-    const blob = await capture.takePhoto();
-    const url = window.URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    document.body.appendChild(a);
-    a.style = "display: none";
-    a.href = url;
-    a.download = 'imagetest.png';
-    a.click();
-
-    /* while (true) {
-     *     const capture = new ImageCapture(track);
-     *     const blob = await capture.takePhoto();
-     *     const imageBitmap = await createImageBitmap(blob);
-     *     const bitmap = await capture.grabFrame();
-     *     const ctx = canvas.getContext('2d');
-
-     *     drawCanvas(canvas, imageBitmap);
-     *     console.log('height: ', bitmap.height, ' width: ', bitmap.width);
-
-     *     //ctx.drawImage(imageBitmap, 0, 0, imageBitmap.width, imageBitmap.height)
-     *     //ctx.drawImage(bitmap, 0, 0)
-     * } */
+    g()
 }
 
-run().then(() => {
+async function getCamera() {
+    const player: HTMLVideoElement = document.getElementById('player') as HTMLVideoElement;
+
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
+
+    player.srcObject = stream;
+
+    const canvas = document.getElementById("player-canvas") as HTMLCanvasElement;
+    const context = canvas.getContext('2d');
+
+    // let fxCanvas;
+    // try {
+    //     fxCanvas = fxCanvas.canvas();
+    // } catch (e) {
+    //     alert(e);
+    //     return;
+    // }
+
+    function saveNewScreenShot(): void {
+        context.drawImage(player, 0, 0, canvas.width, canvas.height);
+        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        console.log('image data');
+
+
+
+        // apply your pixel magic to this bitmap
+        var data = imageData.data; // data is an array of pixels in RGBA
+
+        for (var i = 0; i < data.length; i += 4) {
+            console.log('boooo');
+            var average = (data[i] + data[i + 1] + data[i + 2]) / 3;
+            data[i] = average >= 128 ? 255 : 0; // red
+            data[i + 1] = average >= 128 ? 255 : 0; // green
+            data[i + 2] = average >= 128 ? 255 : 0; // blue
+            // note: i+3 is the alpha channel, we are skipping that one
+        }
+    }
+
+    loop(saveNewScreenShot, 2000);
+}
+
+getCamera().then(() => {
     console.log('done')
 })
 
